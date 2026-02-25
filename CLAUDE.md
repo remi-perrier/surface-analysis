@@ -13,12 +13,15 @@ src/surface_analysis/
     __init__.py              # Exports: Surface, Transformation, Transforms
     surface.py               # Surface dataclass + ISO 25178 parameters as properties
     io.py                    # load_datx (Zygo HDF5), generate_synthetic
+    viz.py                   # plot_surface, plot_surface_3d, plot_surface_3d_interactive
     transforms/
         _base.py             # Transformation Protocol (runtime_checkable)
         __init__.py          # Transforms catalog (interpolation, projection, filtering)
         interpolation.py     # Linear, Nearest
         projection.py        # Polynomial, Plane
         filtering.py         # Gaussian (ISO 16610-21 sigma)
+scripts/
+    analyze_yann.py          # Full pipeline on Yann's .datx, saves PNG + HTML to output/
 analysis/                    # Research notes (surface metrology, packages, pipeline)
 tests/
 ```
@@ -32,6 +35,7 @@ tests/
 - Transforms are composable via `surface.apply(*transforms)`.
 - Transforms return new surfaces, never mutate input.
 - ISO 25178 parameters (Sa, Sq, Sp, Sv, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
+- Visualization: `plot()` (2D imshow), `plot_3d()` (matplotlib 3D, subsampled), `plot_3d_interactive()` (plotly HTML). All use lazy imports to keep deps optional.
 - All imports are **absolute** (no relative imports).
 - `from __future__ import annotations` in every file.
 - Transforms validate inputs: no valid points, insufficient points for polynomial degree, non-positive cutoff.
@@ -58,8 +62,8 @@ print(roughness.Sa, roughness.Ssk)
 uv run python -m pytest tests/ -v
 ```
 
-- 60 tests across 3 files: `test_surface.py`, `test_io.py`, `test_transforms.py`
-- Tests cover: ISO parameters on known surfaces, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline composition
+- 68 tests across 4 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`
+- Tests cover: ISO parameters on known surfaces, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline composition, visualization (2D, 3D, interactive)
 
 ## Tech Stack
 

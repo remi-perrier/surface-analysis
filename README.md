@@ -19,9 +19,9 @@ surface = Surface.from_datx("measurement.datx")
 
 # Process: fill missing points, remove tube curvature, extract roughness
 roughness = surface.apply(
-    Transforms.interpolation.Linear(),
-    Transforms.projection.Polynomial(degree=2),
-    Transforms.filtering.Gaussian(cutoff=0.8),
+    Transforms.Interpolation.Linear(),
+    Transforms.Projection.Polynomial(degree=2),
+    Transforms.Filtering.Gaussian(cutoff=0.8),
 )
 
 # Read ISO 25178 parameters directly
@@ -46,6 +46,21 @@ roughness.parameters()
 | | `Gaussian(cutoff=0.8, mode="lowpass")` | Lowpass (waviness) |
 
 All transforms satisfy the `Transformation` protocol and are composable via `surface.apply()`.
+
+## Visualization
+
+```python
+# 2D height map (matplotlib)
+roughness.plot()
+
+# 3D static view (matplotlib, subsampled)
+roughness.plot_3d()
+roughness.plot_3d(percentage=10)
+
+# 3D interactive (plotly, opens in browser)
+fig = roughness.plot_3d_interactive()
+fig.write_html("roughness.html")
+```
 
 ## Units
 
