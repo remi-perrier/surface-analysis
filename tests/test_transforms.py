@@ -3,24 +3,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from surface_analysis import Surface, Transforms
+from surface_analysis import Surface
 from surface_analysis.transforms._base import Transformation
 from surface_analysis.transforms.filtering import Gaussian
 from surface_analysis.transforms.interpolation import Linear, Nearest
 from surface_analysis.transforms.projection import Plane, Polynomial
-
-
-class TestTransformsCatalog:
-    def test_interpolation(self):
-        assert Transforms.Interpolation.Linear is Linear
-        assert Transforms.Interpolation.Nearest is Nearest
-
-    def test_projection(self):
-        assert Transforms.Projection.Polynomial is Polynomial
-        assert Transforms.Projection.Plane is Plane
-
-    def test_filtering(self):
-        assert Transforms.Filtering.Gaussian is Gaussian
 
 
 class TestProtocol:

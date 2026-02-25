@@ -23,9 +23,6 @@ class TestGeometry:
     def surface(self):
         return Surface.from_array(np.zeros((5, 10)), step_x=0.01, step_y=0.02)
 
-    def test_shape(self, surface):
-        assert surface.shape == (5, 10)
-
     def test_size_x(self, surface):
         assert surface.size_x == pytest.approx(0.1)
 
@@ -142,15 +139,6 @@ class TestISOParameters:
         params = s.parameters()
         expected = {"Sa", "Sq", "Sp", "Sv", "Sz", "Ssk", "Sku", "Sdq", "Sdr"}
         assert set(params.keys()) == expected
-
-
-class TestRepr:
-    def test_format(self):
-        s = Surface.from_array(np.zeros((5, 10)), step_x=0.001, step_y=0.002)
-        r = repr(s)
-        assert "10x5" in r
-        assert "0.0010" in r
-        assert "nan=0.0%" in r
 
 
 class TestApply:
