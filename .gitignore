@@ -10,7 +10,7 @@ build/
 data/raw/
 *.h5
 *.hdf5
-*.datax
+*.datx
 
 # IDE
 .vscode/

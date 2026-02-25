@@ -22,7 +22,6 @@ src/surface_analysis/
         filtering.py         # Gaussian (ISO 16610-21 sigma)
 scripts/
     analyze_yann.py          # Full pipeline on Yann's .datx, saves PNG + HTML to output/
-analysis/                    # Research notes (surface metrology, packages, pipeline)
 tests/
 ```
 
