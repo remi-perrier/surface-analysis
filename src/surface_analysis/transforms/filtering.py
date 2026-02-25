@@ -46,6 +46,8 @@ class Gaussian(Transformation):
         elif self.mode == "highpass":
             z_out = surface.z - lowpass
         else:
-            raise ValueError(f"Unknown mode: {self.mode!r}. Use 'lowpass' or 'highpass'.")
+            raise ValueError(
+                f"Unknown mode: {self.mode!r}. Use 'lowpass' or 'highpass'."
+            )
 
         return Surface(z=z_out, step_x=surface.step_x, step_y=surface.step_y)

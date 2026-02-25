@@ -45,11 +45,11 @@ class Surface:
         return self.z.shape[0] * self.step_y
 
     @property
-    def x(self) -> NDArray[np.float64]:
+    def x(self) -> NDArray[np.floating]:
         return np.arange(self.z.shape[1]) * self.step_x
 
     @property
-    def y(self) -> NDArray[np.float64]:
+    def y(self) -> NDArray[np.floating]:
         return np.arange(self.z.shape[0]) * self.step_y
 
     @property
