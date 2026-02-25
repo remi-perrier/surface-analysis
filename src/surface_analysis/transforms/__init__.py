@@ -5,15 +5,15 @@ from surface_analysis.transforms.projection import Plane, Polynomial
 
 
 class Transforms:
-    class interpolation:
+    class Interpolation:
         Linear = Linear
         Nearest = Nearest
 
-    class projection:
+    class Projection:
         Polynomial = Polynomial
         Plane = Plane
 
-    class filtering:
+    class Filtering:
         Gaussian = Gaussian
 
 
