@@ -38,7 +38,7 @@ def save_plot(surface: Surface, base_name: str, title: str) -> None:
     print(f"  Saved {base_name}_3d.png")
 
     # 3D interactive (plotly)
-    fig_html = surface.plot_3d_interactive()
+    fig_html = surface.plot_3d_interactive(percentage=10)
     fig_html.update_layout(title=title)
     fig_html.write_html(OUTPUT_DIR / f"{base_name}_3d.html")
     print(f"  Saved {base_name}_3d.html")

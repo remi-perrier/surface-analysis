@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -35,11 +36,34 @@ def plot_surface(
     return ax
 
 
+def _subsample(
+    surface: Surface, max_points: int | None = None, percentage: float | None = None
+) -> tuple[NDArray, NDArray, NDArray]:
+    ny, nx = surface.shape
+
+    if percentage is not None:
+        ratio = np.sqrt(percentage / 100.0)
+        max_x = max(1, int(nx * ratio))
+        max_y = max(1, int(ny * ratio))
+    elif max_points is not None:
+        max_x = max_y = max_points
+    else:
+        max_x, max_y = nx, ny
+
+    step_x = max(1, nx // max_x)
+    step_y = max(1, ny // max_y)
+
+    X, Y = np.meshgrid(surface.x[::step_x], surface.y[::step_y])
+    Z = surface.z[::step_y, ::step_x]
+    return X, Y, Z
+
+
 def plot_surface_3d(
     surface: Surface,
     ax: Axes3D | None = None,
     cmap: str = "viridis",
     max_points: int = 300,
+    percentage: float | None = None,
     colorbar: bool = True,
     **kwargs: Any,
 ) -> Axes3D:
@@ -47,13 +71,7 @@ def plot_surface_3d(
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")  # type: ignore[assignment]
 
-    ny, nx = surface.shape
-    step_x = max(1, nx // max_points)
-    step_y = max(1, ny // max_points)
-
-    X, Y = np.meshgrid(surface.x[::step_x], surface.y[::step_y])
-    Z = surface.z[::step_y, ::step_x]
-
+    X, Y, Z = _subsample(surface, max_points=max_points, percentage=percentage)
     surf = ax.plot_surface(X, Y, Z, cmap=cmap, **kwargs)
 
     ax.set_xlabel("x (mm)")
@@ -69,15 +87,19 @@ def plot_surface_3d(
 def plot_surface_3d_interactive(
     surface: Surface,
     cmap: str = "Viridis",
+    max_points: int = 2000,
+    percentage: float | None = None,
     **kwargs: Any,
 ) -> Figure:
     import plotly.graph_objects as go
 
+    X, Y, Z = _subsample(surface, max_points=max_points, percentage=percentage)
+
     fig = go.Figure(
         data=go.Surface(
-            x=surface.x,
-            y=surface.y,
-            z=surface.z,
+            x=X[0],
+            y=Y[:, 0],
+            z=Z,
             colorscale=cmap,
             colorbar=dict(title="z (mm)"),
             **kwargs,
