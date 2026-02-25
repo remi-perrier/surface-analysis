@@ -28,7 +28,7 @@ def _gaussian_filter_nan(z: np.ndarray, sigma_x: float, sigma_y: float) -> np.nd
 class Gaussian(Transformation):
     def __init__(
         self, cutoff: float, mode: Literal["highpass", "lowpass"] = "highpass"
-    ):
+    ) -> None:
         if cutoff <= 0:
             raise ValueError(f"Cutoff must be positive, got {cutoff}")
         valid_modes = ("highpass", "lowpass")

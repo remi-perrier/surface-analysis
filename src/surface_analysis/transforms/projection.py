@@ -7,7 +7,7 @@ from surface_analysis.transforms._base import Transformation
 
 
 class Polynomial(Transformation):
-    def __init__(self, degree: int = 2):
+    def __init__(self, degree: int = 2) -> None:
         self.degree = degree
 
     def transform(self, surface: Surface) -> Surface:
