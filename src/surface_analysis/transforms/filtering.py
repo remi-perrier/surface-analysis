@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -28,7 +28,9 @@ def _gaussian_filter_nan(z: np.ndarray, sigma_x: float, sigma_y: float) -> np.nd
 
 
 class Gaussian(Transformation):
-    def __init__(self, cutoff: float, mode: str = "highpass"):
+    def __init__(
+        self, cutoff: float, mode: Literal["highpass", "lowpass"] = "highpass"
+    ):
         self.cutoff = cutoff
         self.mode = mode
 
