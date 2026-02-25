@@ -2,7 +2,6 @@
 name = "surface-analysis"
 version = "0.1.0"
 description = "Surface metrology analysis toolkit for microscope 3D topography data"
-readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "numpy",
@@ -11,6 +10,13 @@ dependencies = [
     "h5py",
     "plotly",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/surface_analysis"]
 
 [project.optional-dependencies]
 dev = [
