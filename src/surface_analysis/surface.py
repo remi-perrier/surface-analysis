@@ -141,6 +141,11 @@ class Surface:
             "Sdr": self.Sdr,
         }
 
+    def plot(self, **kwargs):
+        from surface_analysis.viz import plot_surface
+
+        return plot_surface(self, **kwargs)
+
     def __repr__(self) -> str:
         ny, nx = self.shape
         return (
