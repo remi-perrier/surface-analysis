@@ -6,11 +6,11 @@ import h5py
 import numpy as np
 
 if TYPE_CHECKING:
-    from .surface import Surface
+    from surface_analysis.surface import Surface
 
 
 def load_datx(path: str) -> Surface:
-    from .surface import Surface
+    from surface_analysis.surface import Surface
 
     with h5py.File(path, "r") as f:
         surface_group = f["Data/Surface"]
@@ -48,7 +48,7 @@ def generate_synthetic(
     noise_rms: float = 0.00005,  # 0.05 µm in mm
     seed: int | None = 42,
 ) -> Surface:
-    from .surface import Surface
+    from surface_analysis.surface import Surface
 
     rng = np.random.default_rng(seed)
 

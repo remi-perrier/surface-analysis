@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 
-
-@runtime_checkable
-class Transformation(Protocol):
-    def transform(self, surface: Surface) -> Surface: ...
+if TYPE_CHECKING:
+    from surface_analysis.transforms._base import Transformation
 
 
 @dataclass
@@ -26,7 +24,7 @@ class Surface:
 
     @classmethod
     def from_datx(cls, path: str) -> Surface:
-        from .io import load_datx
+        from surface_analysis.io import load_datx
 
         return load_datx(path)
 

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+from surface_analysis.transforms._base import Transformation
+
 if TYPE_CHECKING:
-    from ..surface import Surface
+    from surface_analysis.surface import Surface
 
 # ISO 16610-21: sigma = cutoff * sqrt(ln2 / (2 * pi^2))
 # At the cutoff wavelength, the Gaussian transmits 50% amplitude.
@@ -26,15 +27,14 @@ def _gaussian_filter_nan(z: np.ndarray, sigma_x: float, sigma_y: float) -> np.nd
     return result
 
 
-@dataclass
-class GaussianFilter:
-    cutoff: float  # cutoff wavelength in mm (lambda_c)
-    mode: str = "highpass"  # "lowpass" = waviness, "highpass" = roughness
+class Gaussian(Transformation):
+    def __init__(self, cutoff: float, mode: str = "highpass"):
+        self.cutoff = cutoff
+        self.mode = mode
 
     def transform(self, surface: Surface) -> Surface:
-        from ..surface import Surface
+        from surface_analysis.surface import Surface
 
-        # Convert cutoff wavelength to sigma in pixels
         sigma_mm = self.cutoff * _ISO_SIGMA_FACTOR
         sigma_x_px = sigma_mm / surface.step_x
         sigma_y_px = sigma_mm / surface.step_y
@@ -49,7 +49,3 @@ class GaussianFilter:
             raise ValueError(f"Unknown mode: {self.mode!r}. Use 'lowpass' or 'highpass'.")
 
         return Surface(z=z_out, step_x=surface.step_x, step_y=surface.step_y)
-
-
-def gaussian(cutoff: float, mode: str = "highpass") -> GaussianFilter:
-    return GaussianFilter(cutoff=cutoff, mode=mode)

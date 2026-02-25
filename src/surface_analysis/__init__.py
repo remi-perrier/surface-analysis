@@ -1,4 +1,4 @@
-from .surface import Surface, Transformation
-from . import transforms
+from surface_analysis.surface import Surface
+from surface_analysis.transforms import Transformation, Transforms
 
-__all__ = ["Surface", "Transformation", "transforms"]
+__all__ = ["Surface", "Transformation", "Transforms"]
