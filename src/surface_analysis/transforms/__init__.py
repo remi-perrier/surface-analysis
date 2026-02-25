@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from surface_analysis.transforms._base import Transformation
 from surface_analysis.transforms.filtering import Gaussian
 from surface_analysis.transforms.interpolation import Linear, Nearest

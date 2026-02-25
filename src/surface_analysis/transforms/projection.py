@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
+from surface_analysis.surface import Surface
 from surface_analysis.transforms._base import Transformation
-
-if TYPE_CHECKING:
-    from surface_analysis.surface import Surface
 
 
 class Polynomial(Transformation):
@@ -15,8 +11,6 @@ class Polynomial(Transformation):
         self.degree = degree
 
     def transform(self, surface: Surface) -> Surface:
-        from surface_analysis.surface import Surface
-
         z = surface.z
         ny, nx = z.shape
 
@@ -25,6 +19,16 @@ class Polynomial(Transformation):
         X, Y = np.meshgrid(x, y)
 
         mask = np.isfinite(z)
+        n_terms = sum(
+            1 for i in range(self.degree + 1) for j in range(self.degree + 1 - i)
+        )
+        n_valid = int(mask.sum())
+        if n_valid < n_terms:
+            raise ValueError(
+                f"Cannot fit degree {self.degree} polynomial: "
+                f"need at least {n_terms} valid points, got {n_valid}"
+            )
+
         x_valid = X[mask]
         y_valid = Y[mask]
         z_valid = z[mask]

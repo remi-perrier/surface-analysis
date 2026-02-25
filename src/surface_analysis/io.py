@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import h5py
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
-if TYPE_CHECKING:
-    from surface_analysis.surface import Surface
+from surface_analysis.surface import Surface
 
 
 def load_datx(path: str) -> Surface:
-    from surface_analysis.surface import Surface
-
     with h5py.File(path, "r") as f:
         surface_group = f["Data/Surface"]
         key = list(surface_group.keys())[0]
@@ -48,8 +44,6 @@ def generate_synthetic(
     noise_rms: float = 0.00005,  # 0.05 µm in mm
     seed: int | None = 42,
 ) -> Surface:
-    from surface_analysis.surface import Surface
-
     rng = np.random.default_rng(seed)
 
     x = np.arange(nx) * step
@@ -64,8 +58,6 @@ def generate_synthetic(
     waviness = waviness_amplitude * np.sin(2 * np.pi * X / waviness_wavelength)
 
     # Roughness: correlated Gaussian noise
-    from scipy.ndimage import gaussian_filter
-
     raw_noise = rng.standard_normal((ny, nx))
     correlation_px = 10  # pixels
     roughness = gaussian_filter(raw_noise, sigma=correlation_px)

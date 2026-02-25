@@ -1,25 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 from scipy.interpolate import griddata
 
+from surface_analysis.surface import Surface
 from surface_analysis.transforms._base import Transformation
-
-if TYPE_CHECKING:
-    from surface_analysis.surface import Surface
 
 
 class Linear(Transformation):
     def transform(self, surface: Surface) -> Surface:
-        from surface_analysis.surface import Surface
-
         z = surface.z
         if not np.any(np.isnan(z)):
             return surface
 
         mask = np.isfinite(z)
+        if not np.any(mask):
+            raise ValueError("Cannot interpolate: surface has no valid points")
         ny, nx = z.shape
         yy, xx = np.mgrid[0:ny, 0:nx]
 
@@ -39,13 +35,13 @@ class Linear(Transformation):
 
 class Nearest(Transformation):
     def transform(self, surface: Surface) -> Surface:
-        from surface_analysis.surface import Surface
-
         z = surface.z
         if not np.any(np.isnan(z)):
             return surface
 
         mask = np.isfinite(z)
+        if not np.any(mask):
+            raise ValueError("Cannot interpolate: surface has no valid points")
         ny, nx = z.shape
         yy, xx = np.mgrid[0:ny, 0:nx]
 

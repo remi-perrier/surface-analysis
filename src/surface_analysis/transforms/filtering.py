@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
 
+from surface_analysis.surface import Surface
 from surface_analysis.transforms._base import Transformation
-
-if TYPE_CHECKING:
-    from surface_analysis.surface import Surface
 
 # ISO 16610-21: sigma = cutoff * sqrt(ln2 / (2 * pi^2))
 # At the cutoff wavelength, the Gaussian transmits 50% amplitude.
@@ -31,12 +29,12 @@ class Gaussian(Transformation):
     def __init__(
         self, cutoff: float, mode: Literal["highpass", "lowpass"] = "highpass"
     ):
+        if cutoff <= 0:
+            raise ValueError(f"Cutoff must be positive, got {cutoff}")
         self.cutoff = cutoff
         self.mode = mode
 
     def transform(self, surface: Surface) -> Surface:
-        from surface_analysis.surface import Surface
-
         sigma_mm = self.cutoff * _ISO_SIGMA_FACTOR
         sigma_x_px = sigma_mm / surface.step_x
         sigma_y_px = sigma_mm / surface.step_y
@@ -45,11 +43,7 @@ class Gaussian(Transformation):
 
         if self.mode == "lowpass":
             z_out = lowpass
-        elif self.mode == "highpass":
-            z_out = surface.z - lowpass
         else:
-            raise ValueError(
-                f"Unknown mode: {self.mode!r}. Use 'lowpass' or 'highpass'."
-            )
+            z_out = surface.z - lowpass
 
         return Surface(z=z_out, step_x=surface.step_x, step_y=surface.step_y)
