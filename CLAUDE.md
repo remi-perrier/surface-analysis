@@ -1,43 +1,71 @@
 # Surface Analysis - Project Instructions
 
 ## Purpose
-Toolkit for analyzing 3D surface topography data from microscope measurements.
-Target use case: tube inner/outer surface roughness characterization.
+
+Python package for analyzing 3D surface topography from microscope measurements.
+Decomposes surfaces into form, waviness, roughness, and micro-roughness components
+following ISO 25178 / ISO 16610 standards. Built for tube surface characterization.
 
 ## Architecture
 
 ```
-src/surface_analysis/   # Library code
-  io/                   # Data loading (HDF5/DATAX format)
-  preprocessing/        # Interpolation of missing points
-  geometry/             # Form removal (cylinder fitting, projection)
-  filtering/            # Gaussian/spline filters for component separation
-  parameters/           # Roughness parameters (ISO 25178: Sa, Sq, Sz, Ssk, Sku...)
-  visualization/        # 2D heatmaps, 3D surface plots
-data/
-  samples/              # Sample/synthetic data for development
-  raw/                  # Real data files (gitignored)
-analysis/               # Research notes and analysis documents (markdown)
-tests/                  # pytest tests
+src/surface_analysis/
+    __init__.py              # Exports: Surface, Transformation, Transforms
+    surface.py               # Surface dataclass + ISO 25178 parameters as properties
+    io.py                    # load_datx (Zygo HDF5), generate_synthetic
+    transforms/
+        _base.py             # Transformation Protocol (runtime_checkable)
+        __init__.py          # Transforms catalog (interpolation, projection, filtering)
+        interpolation.py     # Linear, Nearest
+        projection.py        # Polynomial, Plane
+        filtering.py         # Gaussian (ISO 16610-21 sigma)
+analysis/                    # Research notes (surface metrology, packages, pipeline)
+tests/
+```
+
+### Key design decisions
+
+- **Surface** is a dataclass holding z (2D height map), step_x, step_y. All units in **mm**.
+- **Transformation** is a Protocol with a single method `transform(surface) -> Surface`.
+- Concrete transforms inherit the Protocol for readability.
+- **Transforms** class aggregates all transforms in 3 categories for discovery.
+- Transforms are composable via `surface.apply(*transforms)`.
+- ISO 25178 parameters (Sa, Sq, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
+- All imports are **absolute** (no relative imports).
+
+## Usage pattern
+
+```python
+from surface_analysis import Surface, Transforms
+
+roughness = (
+    Surface.from_datx("measurement.datx")
+    .apply(
+        Transforms.interpolation.Linear(),
+        Transforms.projection.Polynomial(degree=2),
+        Transforms.filtering.Gaussian(cutoff=0.8),
+    )
+)
+print(roughness.Sa, roughness.Ssk)
 ```
 
 ## Tech Stack
-- Python 3.12+, managed with `uv`
-- numpy, scipy (core computation and filtering)
-- h5py (HDF5/DATAX file reading)
-- matplotlib (2D heatmaps), plotly (3D interactive)
-- No heavy frameworks - keep dependencies minimal and scientific
+
+- Python 3.12+, managed with **uv**
+- numpy, scipy, h5py, matplotlib, plotly
+- Pre-commit: ruff (lint + format) + mypy, all local via `uv run`
 
 ## Git Strategy: Trunk-Based Development
-- `main` branch is always stable
+
+- `main` is always stable
 - Feature branches: `feat/<name>`, fixes: `fix/<name>`, research: `research/<name>`
-- Short-lived branches, merge via squash
+- Short-lived branches, fast-forward merge, delete after merge
 - Commit after each coherent unit of work
-- Tags for milestones (v0.1.0 = first working pipeline)
 
 ## Conventions
+
 - Code, comments, commits, docs: English
 - Conversation: follow user's language (French/English)
 - No over-engineering: build what's needed, iterate
 - Surface metrology terminology follows ISO 25178 / ISO 16610
-- Keep analysis/ notes updated as understanding deepens
+- No relative imports
