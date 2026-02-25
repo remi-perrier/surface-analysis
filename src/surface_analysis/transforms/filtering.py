@@ -31,6 +31,9 @@ class Gaussian(Transformation):
     ):
         if cutoff <= 0:
             raise ValueError(f"Cutoff must be positive, got {cutoff}")
+        valid_modes = ("highpass", "lowpass")
+        if mode not in valid_modes:
+            raise ValueError(f"Mode must be one of {valid_modes}, got {mode!r}")
         self.cutoff = cutoff
         self.mode = mode
 
@@ -43,7 +46,9 @@ class Gaussian(Transformation):
 
         if self.mode == "lowpass":
             z_out = lowpass
-        else:
+        elif self.mode == "highpass":
             z_out = surface.z - lowpass
+        else:
+            raise ValueError(f"Unknown mode {self.mode!r}")
 
         return Surface(z=z_out, step_x=surface.step_x, step_y=surface.step_y)
