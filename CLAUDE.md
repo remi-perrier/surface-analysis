@@ -62,7 +62,7 @@ print(roughness.Sa, roughness.Ssk)
 uv run python -m pytest tests/ -v
 ```
 
-- 68 tests across 4 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`
+- 63 tests across 4 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`
 - Tests cover: ISO parameters on known surfaces, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline composition, visualization (2D, 3D, interactive)
 
 ## Tech Stack
