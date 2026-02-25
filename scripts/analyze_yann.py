@@ -1,7 +1,7 @@
 """Analysis of Yann's tube surface measurement (1ER_x10_xt1x5_avg3.datx).
 
-Produces height maps at each decomposition stage and saves them as PNG files
-in an output/ directory next to this script.
+Produces 2D height maps (PNG), 3D static views (PNG), and 3D interactive
+plots (HTML) at each decomposition stage. Saved in an output/ directory.
 """
 
 from __future__ import annotations
@@ -19,13 +19,29 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
-def save_plot(surface: Surface, filename: str, title: str) -> None:
+def save_plot(surface: Surface, base_name: str, title: str) -> None:
+    # 2D height map
     fig, ax = plt.subplots(figsize=(10, 8))
     surface.plot(ax=ax)
     ax.set_title(title)
-    fig.savefig(OUTPUT_DIR / filename, dpi=150, bbox_inches="tight")
+    fig.savefig(OUTPUT_DIR / f"{base_name}.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved {filename}")
+    print(f"  Saved {base_name}.png")
+
+    # 3D static (matplotlib)
+    fig = plt.figure(figsize=(12, 8))
+    ax3 = fig.add_subplot(111, projection="3d")
+    surface.plot_3d(ax=ax3)
+    ax3.set_title(title)
+    fig.savefig(OUTPUT_DIR / f"{base_name}_3d.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {base_name}_3d.png")
+
+    # 3D interactive (plotly)
+    fig_html = surface.plot_3d_interactive()
+    fig_html.update_layout(title=title)
+    fig_html.write_html(OUTPUT_DIR / f"{base_name}_3d.html")
+    print(f"  Saved {base_name}_3d.html")
 
 
 def main() -> None:
@@ -33,36 +49,36 @@ def main() -> None:
     raw = Surface.from_datx(DATX_PATH)
     print(f"Raw surface: {raw}")
     print(f"  NaN ratio: {raw.nan_ratio:.1%}")
-    save_plot(raw, "01_raw.png", "Raw measurement")
+    save_plot(raw, "01_raw", "Raw measurement")
 
-    # Interpolate missing data
-    interpolated = raw.apply(Transforms.Interpolation.Linear())
+    # Interpolate missing data (nearest neighbor)
+    interpolated = raw.apply(Transforms.Interpolation.Nearest())
     print(f"\nAfter interpolation: {interpolated}")
-    save_plot(interpolated, "02_interpolated.png", "After linear interpolation")
+    save_plot(interpolated, "02_interpolated", "After nearest interpolation")
 
     # Remove form (polynomial degree 2)
     form_removed = interpolated.apply(Transforms.Projection.Polynomial(degree=2))
     print(f"\nAfter form removal: {form_removed}")
-    save_plot(form_removed, "03_form_removed.png", "Form removed (polynomial degree 2)")
+    save_plot(form_removed, "03_form_removed", "Form removed (polynomial degree 2)")
 
     # Extract waviness (lowpass at 0.8 mm cutoff)
     waviness = form_removed.apply(
         Transforms.Filtering.Gaussian(cutoff=0.8, mode="lowpass")
     )
     print(f"\nWaviness: {waviness}")
-    save_plot(waviness, "04_waviness.png", "Waviness (lowpass, cutoff=0.8 mm)")
+    save_plot(waviness, "04_waviness", "Waviness (lowpass, cutoff=0.8 mm)")
 
     # Extract roughness (highpass at 0.8 mm cutoff)
     roughness = form_removed.apply(Transforms.Filtering.Gaussian(cutoff=0.8))
     print(f"\nRoughness: {roughness}")
-    save_plot(roughness, "05_roughness.png", "Roughness (highpass, cutoff=0.8 mm)")
+    save_plot(roughness, "05_roughness", "Roughness (highpass, cutoff=0.8 mm)")
 
     # Extract micro-roughness (highpass at 0.025 mm cutoff)
     micro_roughness = roughness.apply(Transforms.Filtering.Gaussian(cutoff=0.025))
     print(f"\nMicro-roughness: {micro_roughness}")
     save_plot(
         micro_roughness,
-        "06_micro_roughness.png",
+        "06_micro_roughness",
         "Micro-roughness (highpass, cutoff=0.025 mm)",
     )
 

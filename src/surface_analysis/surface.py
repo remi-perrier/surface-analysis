@@ -146,6 +146,16 @@ class Surface:
 
         return plot_surface(self, **kwargs)
 
+    def plot_3d(self, **kwargs):
+        from surface_analysis.viz import plot_surface_3d
+
+        return plot_surface_3d(self, **kwargs)
+
+    def plot_3d_interactive(self, **kwargs):
+        from surface_analysis.viz import plot_surface_3d_interactive
+
+        return plot_surface_3d_interactive(self, **kwargs)
+
     def __repr__(self) -> str:
         ny, nx = self.shape
         return (
