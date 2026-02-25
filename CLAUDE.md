@@ -30,8 +30,11 @@ tests/
 - Concrete transforms inherit the Protocol for readability.
 - **Transforms** class aggregates all transforms in 3 categories for discovery.
 - Transforms are composable via `surface.apply(*transforms)`.
-- ISO 25178 parameters (Sa, Sq, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
+- Transforms return new surfaces, never mutate input.
+- ISO 25178 parameters (Sa, Sq, Sp, Sv, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
 - All imports are **absolute** (no relative imports).
+- `from __future__ import annotations` in every file.
+- Transforms validate inputs: no valid points, insufficient points for polynomial degree, non-positive cutoff.
 
 ## Usage pattern
 
@@ -41,18 +44,28 @@ from surface_analysis import Surface, Transforms
 roughness = (
     Surface.from_datx("measurement.datx")
     .apply(
-        Transforms.interpolation.Linear(),
-        Transforms.projection.Polynomial(degree=2),
-        Transforms.filtering.Gaussian(cutoff=0.8),
+        Transforms.Interpolation.Linear(),
+        Transforms.Projection.Polynomial(degree=2),
+        Transforms.Filtering.Gaussian(cutoff=0.8),
     )
 )
 print(roughness.Sa, roughness.Ssk)
 ```
 
+## Testing
+
+```bash
+uv run python -m pytest tests/ -v
+```
+
+- 60 tests across 3 files: `test_surface.py`, `test_io.py`, `test_transforms.py`
+- Tests cover: ISO parameters on known surfaces, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline composition
+
 ## Tech Stack
 
 - Python 3.12+, managed with **uv**
 - numpy, scipy, h5py, matplotlib, plotly
+- pytest for testing
 - Pre-commit: ruff (lint + format) + mypy, all local via `uv run`
 
 ## Git Strategy: Trunk-Based Development
