@@ -1,0 +1,19 @@
+[project]
+name = "surface-analysis"
+version = "0.1.0"
+description = "Surface metrology analysis toolkit for microscope 3D topography data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "h5py",
+    "plotly",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
