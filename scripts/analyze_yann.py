@@ -10,7 +10,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from surface_analysis import Surface, Transforms
+from surface_analysis import Surface
 
 DATX_PATH = (
     "/Users/rperrier/Documents/temp/SurfaceObservation/examples/1ER_x10_xt1x5_avg3.datx"
@@ -51,44 +51,29 @@ def main() -> None:
     print(f"  NaN ratio: {raw.nan_ratio:.1%}")
     save_plot(raw, "01_raw", "Raw measurement")
 
-    # Interpolate missing data (nearest neighbor)
-    interpolated = raw.apply(Transforms.Interpolation.Nearest())
-    print(f"\nAfter interpolation: {interpolated}")
-    save_plot(interpolated, "02_interpolated", "After nearest interpolation")
-
-    # Remove form (polynomial degree 2)
-    form_removed = interpolated.apply(Transforms.Projection.Polynomial(degree=2))
-    print(f"\nAfter form removal: {form_removed}")
-    save_plot(form_removed, "03_form_removed", "Form removed (polynomial degree 2)")
-
-    # Extract waviness (lowpass at 0.8 mm cutoff)
-    waviness = form_removed.apply(
-        Transforms.Filtering.Gaussian(cutoff=0.8, mode="lowpass")
+    # Decompose using ISO 25178-3 F/S/L pipeline
+    dec = raw.decompose(
+        form="polynomial",
+        lambda_c=0.8,
+        lambda_s=0.025,
+        interpolation="nearest",
     )
-    print(f"\nWaviness: {waviness}")
-    save_plot(waviness, "04_waviness", "Waviness (lowpass, cutoff=0.8 mm)")
 
-    # Extract roughness (highpass at 0.8 mm cutoff)
-    roughness = form_removed.apply(Transforms.Filtering.Gaussian(cutoff=0.8))
-    print(f"\nRoughness: {roughness}")
-    save_plot(roughness, "05_roughness", "Roughness (highpass, cutoff=0.8 mm)")
-
-    # Extract micro-roughness (highpass at 0.025 mm cutoff)
-    micro_roughness = roughness.apply(Transforms.Filtering.Gaussian(cutoff=0.025))
-    print(f"\nMicro-roughness: {micro_roughness}")
+    save_plot(dec.form, "02_form", "Form (polynomial degree 2)")
+    save_plot(dec.waviness, "03_waviness", "Waviness (λ > 0.8 mm)")
+    save_plot(dec.roughness, "04_roughness", "Roughness (0.025 < λ < 0.8 mm)")
     save_plot(
-        micro_roughness,
-        "06_micro_roughness",
-        "Micro-roughness (highpass, cutoff=0.025 mm)",
+        dec.micro_roughness,
+        "05_micro_roughness",
+        "Micro-roughness (λ < 0.025 mm)",
     )
 
     # Summary of ISO 25178 parameters at each stage
     print("\n--- ISO 25178 parameters ---")
     stages = {
-        "Form removed": form_removed,
-        "Waviness": waviness,
-        "Roughness": roughness,
-        "Micro-roughness": micro_roughness,
+        "Waviness": dec.waviness,
+        "Roughness": dec.roughness,
+        "Micro-roughness": dec.micro_roughness,
     }
     header = f"{'Stage':<20} {'Sa (µm)':>10} {'Sq (µm)':>10} {'Ssk':>10} {'Sku':>10} {'Sdq':>10}"
     print(header)

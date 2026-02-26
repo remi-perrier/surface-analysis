@@ -1,14 +1,27 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 
 from surface_analysis.surface import Surface
 from surface_analysis.transforms._base import Transformation
 
 
+def _vandermonde(x: np.ndarray, y: np.ndarray, degree: int) -> np.ndarray:
+    columns = []
+    for i in range(degree + 1):
+        for j in range(degree + 1 - i):
+            columns.append(x**i * y**j)
+    return np.column_stack(columns)
+
+
 class Polynomial(Transformation):
-    def __init__(self, degree: int = 2) -> None:
+    def __init__(
+        self, degree: int = 2, mode: Literal["residual", "form"] = "residual"
+    ) -> None:
         self.degree = degree
+        self.mode = mode
 
     def transform(self, surface: Surface) -> Surface:
         z = surface.z
@@ -19,9 +32,7 @@ class Polynomial(Transformation):
         X, Y = np.meshgrid(x, y)
 
         mask = np.isfinite(z)
-        n_terms = sum(
-            1 for i in range(self.degree + 1) for j in range(self.degree + 1 - i)
-        )
+        n_terms = (self.degree + 1) * (self.degree + 2) // 2
         n_valid = int(mask.sum())
         if n_valid < n_terms:
             raise ValueError(
@@ -29,31 +40,20 @@ class Polynomial(Transformation):
                 f"need at least {n_terms} valid points, got {n_valid}"
             )
 
-        x_valid = X[mask]
-        y_valid = Y[mask]
-        z_valid = z[mask]
+        coeffs, _, _, _ = np.linalg.lstsq(
+            _vandermonde(X[mask], Y[mask], self.degree), z[mask], rcond=None
+        )
+        form = (_vandermonde(X.ravel(), Y.ravel(), self.degree) @ coeffs).reshape(
+            z.shape
+        )
 
-        # 2D Vandermonde: 1, x, y, x^2, xy, y^2, ...
-        columns = []
-        for i in range(self.degree + 1):
-            for j in range(self.degree + 1 - i):
-                columns.append(x_valid**i * y_valid**j)
-        A = np.column_stack(columns)
-
-        coeffs, _, _, _ = np.linalg.lstsq(A, z_valid, rcond=None)
-
-        columns_full = []
-        for i in range(self.degree + 1):
-            for j in range(self.degree + 1 - i):
-                columns_full.append(X.ravel() ** i * Y.ravel() ** j)
-        A_full = np.column_stack(columns_full)
-
-        form = (A_full @ coeffs).reshape(z.shape)
-        z_residual = z - form
-
-        return Surface(z=z_residual, step_x=surface.step_x, step_y=surface.step_y)
+        z_out = form if self.mode == "form" else z - form
+        return Surface(z=z_out, step_x=surface.step_x, step_y=surface.step_y)
 
 
 class Plane(Transformation):
+    def __init__(self, mode: Literal["residual", "form"] = "residual") -> None:
+        self.mode = mode
+
     def transform(self, surface: Surface) -> Surface:
-        return Polynomial(degree=1).transform(surface)
+        return Polynomial(degree=1, mode=self.mode).transform(surface)

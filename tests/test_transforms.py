@@ -138,6 +138,29 @@ class TestPolynomial:
         assert result.step_x == pytest.approx(0.05)
         assert result.step_y == pytest.approx(0.03)
 
+    def test_mode_form_returns_fitted_polynomial(self):
+        nx, ny = 50, 50
+        step = 0.01
+        x = np.arange(nx) * step
+        y = np.arange(ny) * step
+        X, Y = np.meshgrid(x, y)
+        z = 0.5 * X**2 + 0.3 * Y**2
+        s = Surface.from_array(z, step_x=step, step_y=step)
+
+        form = Polynomial(degree=2, mode="form").transform(s)
+        # Form should match the original (which is purely quadratic)
+        np.testing.assert_allclose(form.z, z, atol=1e-10)
+
+    def test_form_plus_residual_equals_original(self):
+        rng = np.random.default_rng(42)
+        z = rng.standard_normal((30, 30))
+        s = Surface.from_array(z, step_x=0.01, step_y=0.01)
+
+        residual = Polynomial(degree=2).transform(s)
+        form = Polynomial(degree=2, mode="form").transform(s)
+        reconstructed = form + residual
+        np.testing.assert_allclose(reconstructed.z, s.z, atol=1e-10)
+
 
 class TestPlane:
     def test_delegates_to_polynomial_degree_1(self):

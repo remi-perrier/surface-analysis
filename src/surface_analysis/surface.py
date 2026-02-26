@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
+    from surface_analysis.decomposition import Decomposition
     from surface_analysis.transforms._base import Transformation
 
 
@@ -16,11 +17,49 @@ class Surface:
     step_x: float  # pixel spacing in mm
     step_y: float  # pixel spacing in mm
 
+    # --- Arithmetic operators ---
+
+    def copy(self) -> Surface:
+        return Surface(z=self.z.copy(), step_x=self.step_x, step_y=self.step_y)
+
+    def _check_compatible(self, other: Surface) -> None:
+        if self.shape != other.shape:
+            raise ValueError(f"Incompatible shapes: {self.shape} vs {other.shape}")
+        if self.step_x != other.step_x or self.step_y != other.step_y:
+            raise ValueError(
+                f"Incompatible steps: ({self.step_x}, {self.step_y}) "
+                f"vs ({other.step_x}, {other.step_y})"
+            )
+
+    def __add__(self, other: Surface) -> Surface:
+        self._check_compatible(other)
+        return Surface(z=self.z + other.z, step_x=self.step_x, step_y=self.step_y)
+
+    def __sub__(self, other: Surface) -> Surface:
+        self._check_compatible(other)
+        return Surface(z=self.z - other.z, step_x=self.step_x, step_y=self.step_y)
+
+    def __mul__(self, scalar: float) -> Surface:
+        return Surface(z=self.z * scalar, step_x=self.step_x, step_y=self.step_y)
+
+    def __rmul__(self, scalar: float) -> Surface:
+        return self.__mul__(scalar)
+
+    def __truediv__(self, scalar: float) -> Surface:
+        return Surface(z=self.z / scalar, step_x=self.step_x, step_y=self.step_y)
+
+    def __neg__(self) -> Surface:
+        return Surface(z=-self.z, step_x=self.step_x, step_y=self.step_y)
+
+    # --- Transforms ---
+
     def apply(self, *transforms: Transformation) -> Surface:
         result = self
         for t in transforms:
             result = t.transform(result)
         return result
+
+    # --- Factory methods ---
 
     @classmethod
     def from_datx(cls, path: str) -> Surface:
@@ -31,6 +70,8 @@ class Surface:
     @classmethod
     def from_array(cls, z: NDArray, step_x: float, step_y: float) -> Surface:
         return cls(z=np.asarray(z, dtype=np.float64), step_x=step_x, step_y=step_y)
+
+    # --- Geometry ---
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -140,6 +181,65 @@ class Surface:
             "Sdq": self.Sdq,
             "Sdr": self.Sdr,
         }
+
+    # --- Decomposition ---
+
+    def decompose(
+        self,
+        form: Literal["plane", "polynomial"] = "polynomial",
+        lambda_c: float = 0.8,
+        lambda_s: float | None = None,
+        interpolation: Literal["linear", "nearest"] = "linear",
+    ) -> Decomposition:
+        from surface_analysis.decomposition import Decomposition
+        from surface_analysis.transforms.filtering import Gaussian
+        from surface_analysis.transforms.interpolation import Linear, Nearest
+        from surface_analysis.transforms.projection import Polynomial
+
+        # Resolve interpolation
+        interp_map = {"linear": Linear, "nearest": Nearest}
+        if interpolation not in interp_map:
+            raise ValueError(
+                f"Unknown interpolation {interpolation!r}, "
+                f"expected one of {list(interp_map)}"
+            )
+
+        # Resolve form → polynomial degree
+        form_map: dict[str, int] = {"plane": 1, "polynomial": 2}
+        if form not in form_map:
+            raise ValueError(f"Unknown form {form!r}, expected one of {list(form_map)}")
+        degree = form_map[form]
+
+        # Preprocessing — fill NaN
+        filled = self.apply(interp_map[interpolation]())
+
+        # F-operator — extract form, derive primary by subtraction
+        form_surface = filled.apply(Polynomial(degree=degree, mode="form"))
+        primary = filled - form_surface
+
+        # Spectral decomposition — ISO 25178-3 F/S/L pipeline
+        waviness = primary.apply(Gaussian(cutoff=lambda_c, mode="lowpass"))
+
+        if lambda_s is not None:
+            roughness = primary.apply(
+                Gaussian(cutoff=lambda_s, mode="lowpass"),
+                Gaussian(cutoff=lambda_c, mode="highpass"),
+            )
+            micro_roughness = primary.apply(Gaussian(cutoff=lambda_s, mode="highpass"))
+        else:
+            roughness = primary.apply(Gaussian(cutoff=lambda_c, mode="highpass"))
+            micro_roughness = None
+
+        return Decomposition(
+            form=form_surface,
+            waviness=waviness,
+            roughness=roughness,
+            micro_roughness=micro_roughness,
+            lambda_c=lambda_c,
+            lambda_s=lambda_s,
+        )
+
+    # --- Visualization ---
 
     def plot(self, **kwargs):
         from surface_analysis.viz import plot_surface

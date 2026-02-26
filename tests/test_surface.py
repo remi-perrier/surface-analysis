@@ -141,6 +141,94 @@ class TestISOParameters:
         assert set(params.keys()) == expected
 
 
+class TestCopy:
+    def test_returns_equal_surface(self):
+        s = Surface.from_array(
+            np.array([[1.0, 2.0], [3.0, 4.0]]), step_x=0.01, step_y=0.02
+        )
+        c = s.copy()
+        np.testing.assert_array_equal(c.z, s.z)
+        assert c.step_x == s.step_x
+        assert c.step_y == s.step_y
+
+    def test_copy_is_independent(self):
+        s = Surface.from_array(np.ones((3, 3)), step_x=0.01, step_y=0.01)
+        c = s.copy()
+        c.z[0, 0] = 999.0
+        assert s.z[0, 0] == pytest.approx(1.0)
+
+
+class TestOperators:
+    @pytest.fixture()
+    def a(self):
+        return Surface.from_array(
+            np.array([[1.0, 2.0], [3.0, 4.0]]), step_x=0.01, step_y=0.02
+        )
+
+    @pytest.fixture()
+    def b(self):
+        return Surface.from_array(
+            np.array([[10.0, 20.0], [30.0, 40.0]]), step_x=0.01, step_y=0.02
+        )
+
+    def test_add(self, a, b):
+        result = a + b
+        np.testing.assert_array_equal(result.z, a.z + b.z)
+
+    def test_sub(self, a, b):
+        result = a - b
+        np.testing.assert_array_equal(result.z, a.z - b.z)
+
+    def test_mul(self, a):
+        result = a * 3.0
+        np.testing.assert_array_equal(result.z, a.z * 3.0)
+
+    def test_rmul(self, a):
+        result = 3.0 * a
+        np.testing.assert_array_equal(result.z, a.z * 3.0)
+
+    def test_truediv(self, a):
+        result = a / 2.0
+        np.testing.assert_array_equal(result.z, a.z / 2.0)
+
+    def test_neg(self, a):
+        result = -a
+        np.testing.assert_array_equal(result.z, -a.z)
+
+    def test_preserves_steps(self, a, b):
+        result = a + b
+        assert result.step_x == pytest.approx(0.01)
+        assert result.step_y == pytest.approx(0.02)
+
+    def test_incompatible_shape_raises(self, a):
+        other = Surface.from_array(np.ones((5, 5)), step_x=0.01, step_y=0.02)
+        with pytest.raises(ValueError, match="Incompatible shapes"):
+            a + other
+
+    def test_incompatible_steps_raises(self, a):
+        other = Surface.from_array(np.ones((2, 2)), step_x=0.05, step_y=0.02)
+        with pytest.raises(ValueError, match="Incompatible steps"):
+            a + other
+
+    def test_nan_propagation(self):
+        z1 = np.array([[1.0, np.nan], [3.0, 4.0]])
+        z2 = np.array([[10.0, 20.0], [30.0, 40.0]])
+        s1 = Surface.from_array(z1, step_x=0.01, step_y=0.01)
+        s2 = Surface.from_array(z2, step_x=0.01, step_y=0.01)
+        result = s1 + s2
+        assert np.isnan(result.z[0, 1])
+        assert result.z[0, 0] == pytest.approx(11.0)
+
+    def test_does_not_mutate_input(self, a, b):
+        z_a = a.z.copy()
+        z_b = b.z.copy()
+        _ = a + b
+        _ = a - b
+        _ = a * 2.0
+        np.testing.assert_array_equal(a.z, z_a)
+        np.testing.assert_array_equal(b.z, z_b)
+
+
 class TestApply:
     def test_chains_transforms(self):
         from surface_analysis.transforms._base import Transformation
