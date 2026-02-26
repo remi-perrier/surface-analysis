@@ -1,67 +1,91 @@
 # surface-analysis
 
 Analyze 3D surface topography from microscope measurements.
-Extract roughness, waviness, and form from height maps following ISO 25178.
+Decompose surfaces into form, waviness, roughness, and micro-roughness following ISO 25178 / ISO 16610.
 
 ## Install
 
 ```bash
+uv add git+https://github.com/remi-perrier/surface-analysis
+```
+
+For development:
+
+```bash
+git clone https://github.com/remi-perrier/surface-analysis.git
+cd surface-analysis
 uv sync
 ```
 
 ## Quick start
 
 ```python
-from surface_analysis import Surface, Transforms
+from surface_analysis import Surface
 
-# Load a Zygo .datx measurement
-surface = Surface.from_datx("measurement.datx")
-
-# Process: fill missing points, remove tube curvature, extract roughness
-roughness = surface.apply(
-    Transforms.Interpolation.Linear(),
-    Transforms.Projection.Polynomial(degree=2),
-    Transforms.Filtering.Gaussian(cutoff=0.8),
+# Load and decompose in one call (ISO 25178-3 F/S/L pipeline)
+dec = Surface.from_datx("measurement.datx").decompose(
+    form="polynomial",       # form removal (plane or polynomial)
+    lambda_c=0.8,            # waviness/roughness cutoff (mm)
+    lambda_s=0.025,          # roughness/micro-roughness cutoff (mm)
+    interpolation="nearest", # NaN filling method
 )
 
-# Read ISO 25178 parameters directly
-print(f"Sa = {roughness.Sa * 1000:.2f} µm")
-print(f"Sq = {roughness.Sq * 1000:.2f} µm")
-print(f"Ssk = {roughness.Ssk:.3f}")
+# Access each layer
+dec.form                # fitted polynomial form
+dec.waviness            # wavelengths > 0.8 mm
+dec.roughness           # wavelengths 0.025–0.8 mm (isolated bandpass)
+dec.micro_roughness     # wavelengths < 0.025 mm
 
-# Or get everything at once
-roughness.parameters()
-# {'Sa': 0.00707, 'Sq': 0.0093, 'Ssk': 1.146, 'Sku': 7.06, ...}
+# ISO 25178 parameters on any layer
+print(f"Sa = {dec.roughness.Sa * 1000:.2f} µm")
+print(f"Ssk = {dec.roughness.Ssk:.3f}")
+dec.roughness.parameters()  # dict with all 9 parameters
 ```
 
-## Available transforms
+Without `lambda_s`, roughness contains everything below `lambda_c`:
 
-| Category | Transform | Description |
-|----------|-----------|-------------|
-| **Interpolation** | `Linear()` | Fill NaN with linear interpolation |
-| | `Nearest()` | Fill NaN with nearest neighbor |
-| **Projection** | `Polynomial(degree=2)` | Remove form by polynomial fit |
-| | `Plane()` | Remove tilt (degree 1) |
-| **Filtering** | `Gaussian(cutoff=0.8)` | ISO 16610-21 Gaussian, highpass (roughness) |
-| | `Gaussian(cutoff=0.8, mode="lowpass")` | Lowpass (waviness) |
+```python
+dec = surface.decompose(lambda_c=0.8)
+dec.micro_roughness  # None
+```
 
-All transforms satisfy the `Transformation` protocol and are composable via `surface.apply()`.
+## Surface arithmetic
+
+```python
+# Verify decomposition reconstruction
+reconstructed = dec.form + dec.waviness + dec.roughness + dec.micro_roughness
+
+# Scale, negate, compare
+diff = surface_a - surface_b
+scaled = surface * 0.5
+```
+
+## Low-level transforms
+
+For custom pipelines, use `apply()` with individual transforms:
+
+```python
+from surface_analysis import Transforms
+
+roughness = (
+    Surface.from_datx("measurement.datx")
+    .apply(
+        Transforms.Interpolation.Linear(),
+        Transforms.Projection.Polynomial(degree=2),
+        Transforms.Filtering.Gaussian(cutoff=0.8),
+    )
+)
+```
 
 ## Visualization
 
 ```python
-# 2D height map (matplotlib)
-roughness.plot()
-
-# 3D static view (matplotlib, subsampled)
-roughness.plot_3d()
-roughness.plot_3d(percentage=10)
-
-# 3D interactive (plotly, opens in browser)
-fig = roughness.plot_3d_interactive()
-fig.write_html("roughness.html")
+surface.plot()                  # 2D height map (matplotlib)
+surface.plot_3d()               # 3D static view (matplotlib)
+fig = surface.plot_3d_interactive()  # 3D interactive (plotly)
+fig.write_html("output.html")
 ```
 
 ## Units
 
-Everything is in **mm** internally. Multiply by 1000 for µm display.
+Everything is in **mm** internally. Multiply by 1000 for display in µm.
