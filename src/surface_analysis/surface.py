@@ -191,6 +191,28 @@ class Surface:
         lambda_s: float | None = None,
         interpolation: Literal["linear", "nearest"] = "linear",
     ) -> Decomposition:
+        """Decompose surface into form, waviness, roughness, and micro-roughness.
+
+        Follows the ISO 25178-3 F/S/L pipeline: interpolation, form removal,
+        then Gaussian filtering to separate spectral bands.
+
+        Parameters
+        ----------
+        form : {"plane", "polynomial"}
+            Form removal strategy. "plane" fits degree 1, "polynomial" degree 2.
+        lambda_c : float
+            Cutoff wavelength (mm) separating waviness from roughness.
+        lambda_s : float or None
+            Cutoff wavelength (mm) separating roughness from micro-roughness.
+            If None, roughness includes all wavelengths below lambda_c.
+        interpolation : {"linear", "nearest"}
+            Method to fill NaN values before decomposition.
+
+        Returns
+        -------
+        Decomposition
+            Dataclass with form, waviness, roughness, micro_roughness surfaces.
+        """
         from surface_analysis.decomposition import Decomposition
         from surface_analysis.transforms.filtering import Gaussian
         from surface_analysis.transforms.interpolation import Linear, Nearest

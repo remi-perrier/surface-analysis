@@ -17,6 +17,17 @@ def _vandermonde(x: np.ndarray, y: np.ndarray, degree: int) -> np.ndarray:
 
 
 class Polynomial(Transformation):
+    """Fit and remove a 2D polynomial form via least-squares.
+
+    Parameters
+    ----------
+    degree : int
+        Polynomial degree (1 = plane, 2 = quadratic, etc.).
+    mode : {"residual", "form"}
+        "residual" returns surface minus the fitted form.
+        "form" returns the fitted polynomial surface itself.
+    """
+
     def __init__(
         self, degree: int = 2, mode: Literal["residual", "form"] = "residual"
     ) -> None:
@@ -52,6 +63,8 @@ class Polynomial(Transformation):
 
 
 class Plane(Transformation):
+    """Shorthand for Polynomial(degree=1). Fits and removes a plane."""
+
     def __init__(self, mode: Literal["residual", "form"] = "residual") -> None:
         self.mode = mode
 

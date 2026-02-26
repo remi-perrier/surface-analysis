@@ -26,6 +26,17 @@ def _gaussian_filter_nan(z: np.ndarray, sigma_x: float, sigma_y: float) -> np.nd
 
 
 class Gaussian(Transformation):
+    """ISO 16610-21 Gaussian filter for surface texture separation.
+
+    Parameters
+    ----------
+    cutoff : float
+        Cutoff wavelength in mm. The filter transmits 50% at this wavelength.
+    mode : {"highpass", "lowpass"}
+        "highpass" keeps wavelengths shorter than cutoff (roughness).
+        "lowpass" keeps wavelengths longer than cutoff (waviness).
+    """
+
     def __init__(
         self, cutoff: float, mode: Literal["highpass", "lowpass"] = "highpass"
     ) -> None:

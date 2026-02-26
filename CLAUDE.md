@@ -10,19 +10,22 @@ following ISO 25178 / ISO 16610 standards. Built for tube surface characterizati
 
 ```
 src/surface_analysis/
-    __init__.py              # Exports: Surface, Transformation, Transforms
-    surface.py               # Surface dataclass + ISO 25178 parameters as properties
+    __init__.py              # Exports: Surface, Decomposition, Transformation, Transforms
+    surface.py               # Surface dataclass: operators, ISO parameters, decompose()
+    decomposition.py         # Decomposition dataclass (form, waviness, roughness, micro_roughness)
     io.py                    # load_datx (Zygo HDF5), generate_synthetic
     viz.py                   # plot_surface, plot_surface_3d, plot_surface_3d_interactive
     transforms/
         _base.py             # Transformation Protocol (runtime_checkable)
         __init__.py          # Transforms catalog (interpolation, projection, filtering)
         interpolation.py     # Linear, Nearest
-        projection.py        # Polynomial, Plane
-        filtering.py         # Gaussian (ISO 16610-21 sigma)
+        projection.py        # Polynomial (mode="residual"|"form"), Plane
+        filtering.py         # Gaussian (ISO 16610-21 sigma, mode="highpass"|"lowpass")
 scripts/
-    analyze_yann.py          # Full pipeline on Yann's .datx, saves PNG + HTML to output/
+    analyze_yann.py          # Full pipeline on Yann's .datx using decompose(), saves PNG + HTML
 tests/
+docs/
+    ISO_STANDARDS.md         # Reference: ISO 25178, 16610, 4288 standards and cutoff tables
 ```
 
 ### Key design decisions
@@ -33,6 +36,10 @@ tests/
 - **Transforms** class aggregates all transforms in 3 categories for discovery.
 - Transforms are composable via `surface.apply(*transforms)`.
 - Transforms return new surfaces, never mutate input.
+- Surface supports arithmetic operators: `+`, `-`, `*`, `/`, unary `-`.
+- **Decomposition** via `surface.decompose()` follows ISO 25178-3 F/S/L pipeline.
+  Roughness is properly isolated as a bandpass (λs < λ < λc) using chained Gaussian filters.
+- `decompose()` params use `Literal` for discoverability, no raw Transformation objects.
 - ISO 25178 parameters (Sa, Sq, Sp, Sv, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
 - Visualization: `plot()` (2D imshow), `plot_3d()` (matplotlib 3D, subsampled), `plot_3d_interactive()` (plotly HTML). All use lazy imports to keep deps optional.
 - All imports are **absolute** (no relative imports).
@@ -42,7 +49,19 @@ tests/
 ## Usage pattern
 
 ```python
-from surface_analysis import Surface, Transforms
+from surface_analysis import Surface
+
+# Quick decomposition (ISO 25178-3 pipeline)
+dec = Surface.from_datx("measurement.datx").decompose(
+    form="polynomial",
+    lambda_c=0.8,
+    lambda_s=0.025,
+    interpolation="nearest",
+)
+print(dec.roughness.Sa, dec.roughness.Ssk)
+
+# Manual transform chain (low-level)
+from surface_analysis import Transforms
 
 roughness = (
     Surface.from_datx("measurement.datx")
@@ -52,7 +71,6 @@ roughness = (
         Transforms.Filtering.Gaussian(cutoff=0.8),
     )
 )
-print(roughness.Sa, roughness.Ssk)
 ```
 
 ## Testing
@@ -61,8 +79,8 @@ print(roughness.Sa, roughness.Ssk)
 uv run python -m pytest tests/ -v
 ```
 
-- 63 tests across 4 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`
-- Tests cover: ISO parameters on known surfaces, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline composition, visualization (2D, 3D, interactive)
+- 89 tests across 5 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`, `test_decomposition.py`
+- Tests cover: ISO parameters, operators, copy, decomposition reconstruction, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline, visualization
 
 ## Tech Stack
 
@@ -85,3 +103,4 @@ uv run python -m pytest tests/ -v
 - No over-engineering: build what's needed, iterate
 - Surface metrology terminology follows ISO 25178 / ISO 16610
 - No relative imports
+- Docstring style: **NumPy** (numpydoc) — parameters, returns, raises sections

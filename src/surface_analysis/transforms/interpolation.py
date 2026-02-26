@@ -8,6 +8,12 @@ from surface_analysis.transforms._base import Transformation
 
 
 class Linear(Transformation):
+    """Fill NaN values using linear interpolation.
+
+    Uses scipy griddata with nearest-neighbor fallback for points
+    outside the convex hull of valid data.
+    """
+
     def transform(self, surface: Surface) -> Surface:
         z = surface.z
         if not np.any(np.isnan(z)):
@@ -34,6 +40,8 @@ class Linear(Transformation):
 
 
 class Nearest(Transformation):
+    """Fill NaN values using nearest-neighbor interpolation."""
+
     def transform(self, surface: Surface) -> Surface:
         z = surface.z
         if not np.any(np.isnan(z)):
