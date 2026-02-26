@@ -78,6 +78,10 @@ class Surface:
         return self.z.shape
 
     @property
+    def n_points(self) -> int:
+        return self.z.size
+
+    @property
     def size_x(self) -> float:
         return self.z.shape[1] * self.step_x
 
@@ -263,20 +267,44 @@ class Surface:
 
     # --- Visualization ---
 
-    def plot(self, **kwargs):
+    def plot(self, title: str | None = None, **kwargs):
         from surface_analysis.viz import plot_surface
 
-        return plot_surface(self, **kwargs)
+        return plot_surface(self, title=title, **kwargs)
 
-    def plot_3d(self, **kwargs):
+    def plot_3d(
+        self,
+        max_points: int = 90_000,
+        equal_xy: bool = True,
+        title: str | None = None,
+        **kwargs,
+    ):
         from surface_analysis.viz import plot_surface_3d
 
-        return plot_surface_3d(self, **kwargs)
+        return plot_surface_3d(
+            self,
+            max_points=max_points,
+            equal_xy=equal_xy,
+            title=title,
+            **kwargs,
+        )
 
-    def plot_3d_interactive(self, **kwargs):
+    def plot_3d_interactive(
+        self,
+        max_points: int = 500_000,
+        equal_xy: bool = True,
+        title: str | None = None,
+        **kwargs,
+    ):
         from surface_analysis.viz import plot_surface_3d_interactive
 
-        return plot_surface_3d_interactive(self, **kwargs)
+        return plot_surface_3d_interactive(
+            self,
+            max_points=max_points,
+            equal_xy=equal_xy,
+            title=title,
+            **kwargs,
+        )
 
     def __repr__(self) -> str:
         ny, nx = self.shape

@@ -39,6 +39,43 @@ def test_plot_no_crash_with_nan():
     assert isinstance(ax, Axes)
 
 
+# --- Title ---
+
+
+def test_plot_title():
+    s = _make_surface()
+    ax = s.plot(title="Test title")
+    assert ax.get_title() == "Test title"
+
+
+def test_plot_3d_title():
+    s = _make_surface()
+    ax = s.plot_3d(title="3D title")
+    assert ax.figure._suptitle.get_text() == "3D title"
+
+
+def test_plot_3d_interactive_title():
+    import plotly.graph_objects as go
+
+    s = _make_surface()
+    fig = s.plot_3d_interactive(title="Interactive title")
+    assert isinstance(fig, go.Figure)
+    assert fig.layout.title.text == "Interactive title"
+
+
+# --- Subsampling ---
+
+
+def test_subsample_preserves_aspect_ratio():
+    """Non-square surface should not become square after subsampling."""
+    from surface_analysis.viz import _subsample
+
+    s = _make_surface(ny=100, nx=500)
+    _, _, Z = _subsample(s, max_points=1000)
+    z_ny, z_nx = Z.shape
+    assert z_nx > z_ny, "Subsampled grid should preserve rectangular aspect ratio"
+
+
 # --- 3D matplotlib ---
 
 

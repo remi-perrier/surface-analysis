@@ -21,25 +21,19 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 def save_plot(surface: Surface, base_name: str, title: str) -> None:
     # 2D height map
-    fig, ax = plt.subplots(figsize=(10, 8))
-    surface.plot(ax=ax)
-    ax.set_title(title)
-    fig.savefig(OUTPUT_DIR / f"{base_name}.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    ax = surface.plot(title=title)
+    ax.figure.savefig(OUTPUT_DIR / f"{base_name}.png", dpi=150, bbox_inches="tight")
+    plt.close(ax.figure)
     print(f"  Saved {base_name}.png")
 
     # 3D static (matplotlib)
-    fig = plt.figure(figsize=(12, 8))
-    ax3 = fig.add_subplot(111, projection="3d")
-    surface.plot_3d(ax=ax3)
-    ax3.set_title(title)
-    fig.savefig(OUTPUT_DIR / f"{base_name}_3d.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    ax3 = surface.plot_3d(title=title)
+    ax3.figure.savefig(OUTPUT_DIR / f"{base_name}_3d.png", dpi=150, bbox_inches="tight")
+    plt.close(ax3.figure)
     print(f"  Saved {base_name}_3d.png")
 
     # 3D interactive (plotly)
-    fig_html = surface.plot_3d_interactive(percentage=10)
-    fig_html.update_layout(title=title)
+    fig_html = surface.plot_3d_interactive(title=title)
     fig_html.write_html(OUTPUT_DIR / f"{base_name}_3d.html")
     print(f"  Saved {base_name}_3d.html")
 

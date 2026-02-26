@@ -42,6 +42,16 @@ class TestGeometry:
         assert y[-1] == pytest.approx(0.08)
 
 
+class TestNPoints:
+    def test_n_points(self):
+        s = Surface.from_array(np.zeros((5, 10)), step_x=0.01, step_y=0.02)
+        assert s.n_points == 50
+
+    def test_n_points_single_pixel(self):
+        s = Surface.from_array(np.zeros((1, 1)), step_x=0.01, step_y=0.01)
+        assert s.n_points == 1
+
+
 class TestNaN:
     def test_no_nan(self):
         s = Surface.from_array(np.ones((3, 3)), step_x=0.01, step_y=0.01)

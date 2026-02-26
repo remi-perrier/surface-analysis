@@ -80,9 +80,11 @@ roughness = (
 ## Visualization
 
 ```python
-surface.plot()                  # 2D height map (matplotlib)
-surface.plot_3d()               # 3D static view (matplotlib)
-fig = surface.plot_3d_interactive()  # 3D interactive (plotly)
+surface.plot(title="Raw")                  # 2D height map (matplotlib)
+surface.plot_3d(title="Raw")               # 3D static (matplotlib, ~90k points)
+surface.plot_3d(max_points=50_000)         # fewer points for speed
+surface.plot_3d(equal_xy=False)            # free x/y scaling
+fig = surface.plot_3d_interactive()        # 3D interactive (plotly, ~500k points)
 fig.write_html("output.html")
 ```
 

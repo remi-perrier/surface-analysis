@@ -18,17 +18,21 @@ def plot_surface(
     surface: Surface,
     ax: Axes | None = None,
     cmap: str = "viridis",
+    title: str | None = None,
     colorbar: bool = True,
     **kwargs: Any,
 ) -> Axes:
     if ax is None:
-        ax = plt.gca()
+        _, ax = plt.subplots()
 
     extent = (0, surface.size_x, surface.size_y, 0)
-    im = ax.imshow(surface.z, extent=extent, cmap=cmap, **kwargs)
+    im = ax.imshow(surface.z, extent=extent, cmap=cmap, aspect="equal", **kwargs)
 
     ax.set_xlabel("x (mm)")
     ax.set_ylabel("y (mm)")
+
+    if title is not None:
+        ax.set_title(title)
 
     if colorbar:
         ax.figure.colorbar(im, ax=ax, label="z (mm)")
@@ -37,16 +41,16 @@ def plot_surface(
 
 
 def _subsample(
-    surface: Surface, max_points: int | None = None, percentage: float | None = None
+    surface: Surface,
+    max_points: int,
 ) -> tuple[NDArray, NDArray, NDArray]:
     ny, nx = surface.shape
+    total = nx * ny
 
-    if percentage is not None:
-        ratio = np.sqrt(percentage / 100.0)
+    if total > max_points:
+        ratio = np.sqrt(max_points / total)
         max_x = max(1, int(nx * ratio))
         max_y = max(1, int(ny * ratio))
-    elif max_points is not None:
-        max_x = max_y = max_points
     else:
         max_x, max_y = nx, ny
 
@@ -62,24 +66,38 @@ def plot_surface_3d(
     surface: Surface,
     ax: Axes3D | None = None,
     cmap: str = "viridis",
-    max_points: int = 300,
-    percentage: float | None = None,
+    max_points: int = 90_000,
+    equal_xy: bool = True,
+    title: str | None = None,
     colorbar: bool = True,
     **kwargs: Any,
 ) -> Axes3D:
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(14, 6))
+        fig.subplots_adjust(left=0.02, right=0.85)
         ax = fig.add_subplot(111, projection="3d")  # type: ignore[assignment]
 
-    X, Y, Z = _subsample(surface, max_points=max_points, percentage=percentage)
+    X, Y, Z = _subsample(surface, max_points=max_points)
     surf = ax.plot_surface(X, Y, Z, cmap=cmap, **kwargs)
 
-    ax.set_xlabel("x (mm)")
-    ax.set_ylabel("y (mm)")
-    ax.set_zlabel("z (mm)")
+    if title is not None:
+        ax.figure.suptitle(title)
+
+    ax.set_xlabel("x (mm)", labelpad=10, fontsize=8)
+    ax.set_ylabel("y (mm)", labelpad=10, fontsize=8)
+    ax.set_zlabel("z (mm)", labelpad=10, fontsize=8)
+    ax.zaxis.set_major_locator(plt.MaxNLocator(nbins=5))
+    ax.tick_params(labelsize=7)
+
+    if equal_xy:
+        x_range = surface.size_x
+        y_range = surface.size_y
+        max_xy = max(x_range, y_range)
+        min_xy = min(x_range, y_range)
+        ax.set_box_aspect((x_range / max_xy, y_range / max_xy, min_xy / max_xy))
 
     if colorbar:
-        ax.figure.colorbar(surf, ax=ax, shrink=0.5, label="z (mm)")
+        ax.figure.colorbar(surf, ax=ax, shrink=0.5, pad=0.12, label="z (mm)")
 
     return ax
 
@@ -87,13 +105,14 @@ def plot_surface_3d(
 def plot_surface_3d_interactive(
     surface: Surface,
     cmap: str = "Viridis",
-    max_points: int = 2000,
-    percentage: float | None = None,
+    max_points: int = 500_000,
+    equal_xy: bool = True,
+    title: str | None = None,
     **kwargs: Any,
 ) -> Figure:
     import plotly.graph_objects as go
 
-    X, Y, Z = _subsample(surface, max_points=max_points, percentage=percentage)
+    X, Y, Z = _subsample(surface, max_points=max_points)
 
     fig = go.Figure(
         data=go.Surface(
@@ -106,12 +125,23 @@ def plot_surface_3d_interactive(
         )
     )
 
-    fig.update_layout(
-        scene=dict(
-            xaxis_title="x (mm)",
-            yaxis_title="y (mm)",
-            zaxis_title="z (mm)",
-        ),
+    scene: dict[str, Any] = dict(
+        xaxis_title="x (mm)",
+        yaxis_title="y (mm)",
+        zaxis_title="z (mm)",
     )
+    if equal_xy:
+        x_range = surface.size_x
+        y_range = surface.size_y
+        max_xy = max(x_range, y_range)
+        min_xy = min(x_range, y_range)
+        scene["aspectmode"] = "manual"
+        scene["aspectratio"] = dict(
+            x=x_range / max_xy,
+            y=y_range / max_xy,
+            z=min_xy / max_xy,
+        )
+
+    fig.update_layout(scene=scene, title=title)
 
     return fig

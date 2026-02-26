@@ -41,7 +41,7 @@ docs/
   Roughness is properly isolated as a bandpass (λs < λ < λc) using chained Gaussian filters.
 - `decompose()` params use `Literal` for discoverability, no raw Transformation objects.
 - ISO 25178 parameters (Sa, Sq, Sp, Sv, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
-- Visualization: `plot()` (2D imshow), `plot_3d()` (matplotlib 3D, subsampled), `plot_3d_interactive()` (plotly HTML). All use lazy imports to keep deps optional.
+- Visualization: `plot()` (2D imshow), `plot_3d()` (matplotlib 3D), `plot_3d_interactive()` (plotly HTML). All use lazy imports to keep deps optional. All accept `title`. 3D methods accept `max_points` (total point budget, aspect-ratio preserving subsample) and `equal_xy` (equal x/y scale, z auto-scaled).
 - All imports are **absolute** (no relative imports).
 - `from __future__ import annotations` in every file.
 - Transforms validate inputs: no valid points, insufficient points for polynomial degree, non-positive cutoff.
@@ -79,8 +79,8 @@ roughness = (
 uv run python -m pytest tests/ -v
 ```
 
-- 89 tests across 5 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`, `test_decomposition.py`
-- Tests cover: ISO parameters, operators, copy, decomposition reconstruction, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline, visualization
+- 95 tests across 5 files: `test_surface.py`, `test_io.py`, `test_transforms.py`, `test_viz.py`, `test_decomposition.py`
+- Tests cover: ISO parameters, operators, copy, n_points, decomposition reconstruction, edge case guards (ValueError), transform immutability, protocol conformance, Transforms catalog, full pipeline, visualization (title, subsampling aspect ratio, NaN handling)
 
 ## Tech Stack
 
