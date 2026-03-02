@@ -7,6 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
+    from surface_analysis.abbott_firestone import AbbottFirestone
     from surface_analysis.decomposition import Decomposition
     from surface_analysis.transforms._base import Transformation
 
@@ -186,6 +187,43 @@ class Surface:
             "Sdr": self.Sdr,
         }
 
+    # --- ISO 13565-2 / Abbott-Firestone parameters ---
+
+    @property
+    def abbott_firestone(self) -> AbbottFirestone:
+        """Build the Abbott-Firestone (bearing area) curve for this surface."""
+        from surface_analysis.abbott_firestone import AbbottFirestone
+
+        return AbbottFirestone.from_surface(self.z)
+
+    @property
+    def Sk(self) -> float:
+        return self.abbott_firestone.Sk
+
+    @property
+    def Spk(self) -> float:
+        return self.abbott_firestone.Spk
+
+    @property
+    def Svk(self) -> float:
+        return self.abbott_firestone.Svk
+
+    @property
+    def Vmp(self) -> float:
+        return self.abbott_firestone.Vmp
+
+    @property
+    def Vmc(self) -> float:
+        return self.abbott_firestone.Vmc
+
+    @property
+    def Vvc(self) -> float:
+        return self.abbott_firestone.Vvc
+
+    @property
+    def Vvv(self) -> float:
+        return self.abbott_firestone.Vvv
+
     # --- Decomposition ---
 
     def decompose(
@@ -236,7 +274,8 @@ class Surface:
             raise ValueError(f"Unknown form {form!r}, expected one of {list(form_map)}")
         degree = form_map[form]
 
-        # Preprocessing — fill NaN
+        # Preprocessing — fill NaN for filtering, but remember original mask
+        nan_mask = np.isnan(self.z)
         filled = self.apply(interp_map[interpolation]())
 
         # F-operator — extract form, derive primary by subtraction
@@ -256,11 +295,19 @@ class Surface:
             roughness = primary.apply(Gaussian(cutoff=lambda_c, mode="highpass"))
             micro_roughness = None
 
+        # Restore original NaN mask — interpolation is for filtering only,
+        # interpolated pixels must not influence ISO parameter computation.
+        if nan_mask.any():
+            for surf in (form_surface, primary, waviness, roughness, micro_roughness):
+                if surf is not None:
+                    surf.z[nan_mask] = np.nan
+
         return Decomposition(
             form=form_surface,
             waviness=waviness,
             roughness=roughness,
             micro_roughness=micro_roughness,
+            primary=primary,
             lambda_c=lambda_c,
             lambda_s=lambda_s,
         )

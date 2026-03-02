@@ -10,9 +10,10 @@ following ISO 25178 / ISO 16610 standards. Built for tube surface characterizati
 
 ```
 src/surface_analysis/
-    __init__.py              # Exports: Surface, Decomposition, Transformation, Transforms
-    surface.py               # Surface dataclass: operators, ISO parameters, decompose()
-    decomposition.py         # Decomposition dataclass (form, waviness, roughness, micro_roughness)
+    __init__.py              # Exports: Surface, AbbottFirestone, Decomposition, Transformation, Transforms
+    surface.py               # Surface dataclass: operators, ISO parameters, Abbott-Firestone, decompose()
+    abbott_firestone.py      # ISO 13565-2 bearing area curve: Sk, Spk, Svk, Vmp, Vmc, Vvc, Vvv
+    decomposition.py         # Decomposition dataclass (form, primary, waviness, roughness, micro_roughness)
     io.py                    # load_datx (Zygo HDF5), generate_synthetic
     viz.py                   # plot_surface, plot_surface_3d, plot_surface_3d_interactive
     transforms/
@@ -23,6 +24,7 @@ src/surface_analysis/
         filtering.py         # Gaussian (ISO 16610-21 sigma, mode="highpass"|"lowpass")
 scripts/
     analyze_yann.py          # Full pipeline on Yann's .datx using decompose(), saves PNG + HTML
+    compare_mountainsmap.py  # Compare our results with MountainsMap reference (all params <1.3%)
 tests/
 docs/
     ISO_STANDARDS.md         # Reference: ISO 25178, 16610, 4288 standards and cutoff tables
@@ -39,8 +41,11 @@ docs/
 - Surface supports arithmetic operators: `+`, `-`, `*`, `/`, unary `-`.
 - **Decomposition** via `surface.decompose()` follows ISO 25178-3 F/S/L pipeline.
   Roughness is properly isolated as a bandpass (λs < λ < λc) using chained Gaussian filters.
+- **Decomposition** includes `primary` (form-removed surface before spectral filtering).
 - `decompose()` params use `Literal` for discoverability, no raw Transformation objects.
 - ISO 25178 parameters (Sa, Sq, Sp, Sv, Sz, Ssk, Sku, Sdq, Sdr) are properties on Surface.
+- ISO 13565-2 Abbott-Firestone parameters (Sk, Spk, Svk, Vmp, Vmc, Vvc, Vvv) via `surface.abbott_firestone` or direct properties.
+- `decompose()` restores the original NaN mask on output surfaces — interpolation is for filtering only, not for parameter computation.
 - Visualization: `plot()` (2D imshow), `plot_3d()` (matplotlib 3D), `plot_3d_interactive()` (plotly HTML). All use lazy imports to keep deps optional. All accept `title`. 3D methods accept `max_points` (total point budget, aspect-ratio preserving subsample) and `equal_xy` (equal x/y scale, z auto-scaled).
 - All imports are **absolute** (no relative imports).
 - `from __future__ import annotations` in every file.

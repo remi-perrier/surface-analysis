@@ -13,5 +13,6 @@ class Decomposition:
     waviness: Surface
     roughness: Surface
     micro_roughness: Surface | None
+    primary: Surface
     lambda_c: float
     lambda_s: float | None

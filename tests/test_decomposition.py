@@ -24,6 +24,7 @@ class TestDecompose:
         assert isinstance(dec.waviness, Surface)
         assert isinstance(dec.roughness, Surface)
         assert isinstance(dec.micro_roughness, Surface)
+        assert isinstance(dec.primary, Surface)
 
     def test_without_lambda_s_micro_roughness_is_none(self, synthetic):
         dec = synthetic.decompose(lambda_c=0.08)
@@ -57,14 +58,19 @@ class TestDecompose:
         z[10, 10] = np.nan
         s = Surface.from_array(z, step_x=0.001, step_y=0.001)
         dec = s.decompose(form="plane", lambda_c=0.01, interpolation="nearest")
-        assert dec.roughness.nan_count == 0
+        # NaN mask is restored after filtering — original NaN stays NaN
+        assert dec.roughness.nan_count == 1
 
-    def test_handles_nan_surface(self):
+    def test_nan_mask_preserved(self):
         z = np.random.default_rng(42).standard_normal((50, 50))
         z[0, :5] = np.nan
         s = Surface.from_array(z, step_x=0.001, step_y=0.001)
         dec = s.decompose(form="plane", lambda_c=0.01)
-        assert dec.roughness.nan_count == 0
+        # Original NaN mask must be preserved on all decomposed surfaces
+        assert dec.roughness.nan_count == 5
+        assert dec.waviness.nan_count == 5
+        assert dec.form.nan_count == 5
+        assert dec.primary.nan_count == 5
 
     def test_unknown_form_raises(self, synthetic):
         with pytest.raises(ValueError, match="Unknown form"):
